@@ -32,7 +32,7 @@ async def dut_test(dut):
 
 
 class InputDriver(BusDriver):
-    _signals=['read_address','read_data','read_en','write_address','write_data','write_en','write_rdy','read_rdy']
+    _signals=['write_rdy','read_rdy','write_address','write_data','write_en','read_address','read_en','read_data']
     def __init__(self,dut,name,clk):
         BusDriver.__init__(self, dut, name, clk)
         self.bus.write_en.value = 0
@@ -42,28 +42,27 @@ class InputDriver(BusDriver):
     async def _driver_send(self,value,sync=True):
         if self.bus.read_rdy.value!=1:
             await RisingEdge(self.bus.read_rdy)
-            self.bus.read_en.value=1
-            self.bus.read_address.value= value.read_address
-            await ReadOnly()
-            await RisingEdge(self.clk)
-            self.bus.read_en.value=0
-            await NextTimeStep()
+        self.bus.read_en.value=1
+        self.bus.read_address.value= value.read_address
+        await ReadOnly()
+        await RisingEdge(self.clk)
+        self.bus.read_en.value=0
+        await NextTimeStep()
         if self.bus.write_rdy.value!=1:
             await RisingEdge(self.bus.write_rdy)
-            self.bus.read_en.value=1
-            self.bus.write_data.value= value.write_data
-            self.bus.write_address.value= value.write_address
-            await ReadOnly()
-            await RisingEdge(self.clk)
-            self.bus.read_en.value=0
-            await NextTimeStep()
+        self.bus.read_en.value=1
+        self.bus.write_data.value= value.write_data
+        self.bus.write_address.value= value.write_address
+        await ReadOnly()
+        await RisingEdge(self.clk)
+        self.bus.read_en.value=0
+        await NextTimeStep()
 
 
 class OutputDriver(BusDriver):
-    _signals=['read_address',
-	   'read_data',
+    _signals=['read_rdy','read_address',
 	   'read_en',
-	   'read_rdy',]
+	   'read_data',]
     def __init__(self,dut,name,clk,sb_callback):
         BusDriver.__init__(self,dut,name,clk)
         self.bus.read_en.value = 0
@@ -74,13 +73,13 @@ class OutputDriver(BusDriver):
         while True:
             if self.bus.read_rdy.value!=1:
                 await RisingEdge(self.bus.read_rdy)
-                self.bus.read_en.value=1
+            self.bus.read_en.value=1
                 #self.bus.data.value= valueawait
-                await ReadOnly()
-                self.callback(self.bus.read_data.value)
-                await RisingEdge(self.clk)
-                self.bus.read_en.value=0
-                await NextTimeStep()
+            await ReadOnly()
+            self.callback(self.bus.read_data.value)
+            await RisingEdge(self.clk)
+            self.bus.read_en.value=0
+            await NextTimeStep()
 
 class val:
     def __init__(self,write_address,write_data,read_address):
