@@ -92,7 +92,7 @@ class InputDriver(BusDriver):
     async def _driver_send(self,value,sync=True):
         if self.bus.write_rdy.value!=1:
             await RisingEdge(self.bus.write_rdy)
-        self.bus.read_en.value=1
+        self.bus.write_en.value=1
         self.bus.write_data.value= value.write_data
         self.bus.write_address.value= value.write_address
         await ReadOnly()
