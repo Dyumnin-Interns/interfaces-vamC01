@@ -56,7 +56,7 @@ async def dut_test(dut):
     wd=InputDriver(dut,'',dut.CLK)
     #await Timer(10, 'ns')
     IO_monitor(dut,'',dut.CLK,callback=wr_port_cover)
-    #OutputDriver(dut,'',dut.CLK,cb_fn)
+    OutputDriver(dut,'',dut.CLK,cb_fn)
     #exp_val=[]
     for i in range(300):
         wdx=random.randint(0,1)
@@ -68,9 +68,11 @@ async def dut_test(dut):
         exp_val.append(wdx)
         dum(wax,rax,wdx)
     #while len(exp_val)>0:
-     # await Timer(2,'ns')
-    await Timer(500,'ns')
-    OutputDriver(dut,'',dut.CLK,cb_fn)
+      #await Timer(2,'ns')
+    await Timer(len(exp_val)*2,'ns')
+
+    #OutputDriver(dut,'',dut.CLK,cb_fn)
+
     
 
     coverage_db.report_coverage(cocotb.log.info,bins=True)
@@ -136,7 +138,7 @@ class OutputDriver(BusDriver):
         self.bus.read_en.value = 0
         self.clk = clk
         self.callback=sb_callback
-        self.append(0)
+        self._driver_send(0)
     async def _driver_send(self,value,sync=True):
         while True:
             if self.bus.read_rdy.value!=1:
