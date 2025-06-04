@@ -6,11 +6,13 @@ from cocotb_coverage.coverage import CoverCross, CoverPoint, coverage_db
 from cocotb_bus.monitors import BusMonitor
 import os
 
+
 def cb_fn(av):
-    global exp_val
-    assert exp_val,"no exp_val"
-    ee=exp_val.pop(0)
-    assert av==ee, "EEEE"
+    global exp_val 
+    assert exp_val,"******no exp_val*******"
+    #print("act= ",av, "  exp= ",exp_val.pop(0))
+    assert av==exp_val.pop(0), "EEEE"
+
 
 @CoverPoint("top.write_address",xf=lambda x, y, z:x, bins=[4,5])
 
@@ -45,19 +47,19 @@ def wr_port_cover(tnx):
 @cocotb.test()
 async def dut_test(dut):
     global exp_val
+    exp_val=[]
+
     dut.RST_N.value=1
     await Timer(1,'ns')
     dut.RST_N.value=0
     await Timer(1,'ns')
     await RisingEdge(dut.CLK)
     dut.RST_N.value=1
-    ##dut.RST_N.value=1
-    exp_val=[]
+
     wd=InputDriver(dut,'',dut.CLK)
     #await Timer(10, 'ns')
     IO_monitor(dut,'',dut.CLK,callback=wr_port_cover)
     OutputDriver(dut,'',dut.CLK,cb_fn)
-    #exp_val=[]
     for i in range(300):
         wdx=random.randint(0,1)
         wax=random.randint(4,5)
@@ -68,18 +70,13 @@ async def dut_test(dut):
         exp_val.append(wdx)
         dum(wax,rax,wdx)
     #while len(exp_val)>0:
-      #await Timer(2,'ns')
+        #await Timer(2,'ns')
     await Timer(len(exp_val)*2,'ns')
-
+ 
     #OutputDriver(dut,'',dut.CLK,cb_fn)
-
-    
-
     coverage_db.report_coverage(cocotb.log.info,bins=True)
     coverage_file=os.path.join(os.getenv('RESULT_PATH', "./"),'coverage.xml')
     coverage_db.export_to_xml(filename=coverage_file)
-   
-
 
 class InputDriver(BusDriver):
     _signals=['write_rdy','read_rdy','write_address','write_data','write_en','read_address','read_en','read_data']
@@ -90,6 +87,8 @@ class InputDriver(BusDriver):
         self.clk = clk
 
     async def _driver_send(self,value,sync=True):
+        for i in range(random.randint(0, 20)):
+            await RisingEdge(self.clk)
         if self.bus.write_rdy.value!=1:
             await RisingEdge(self.bus.write_rdy)
         self.bus.write_en.value=1
@@ -97,16 +96,17 @@ class InputDriver(BusDriver):
         self.bus.write_address.value= value.write_address
         await ReadOnly()
         await RisingEdge(self.clk)
-        self.bus.write_en.value=0
         await NextTimeStep()
+        self.bus.write_en.value=0 
         if self.bus.read_rdy.value!=1:
             await RisingEdge(self.bus.read_rdy)
         self.bus.read_en.value=1
         self.bus.read_address.value= value.read_address
         await ReadOnly()
         await RisingEdge(self.clk)
-        self.bus.read_en.value=0
         await NextTimeStep()
+        self.bus.read_en.value=0
+        
 
 class  IO_monitor(BusMonitor):
     _signals =['write_rdy','read_rdy','write_en','write_address','write_data','read_en','read_address']
@@ -132,24 +132,27 @@ class  IO_monitor(BusMonitor):
 class OutputDriver(BusDriver):
     _signals=['read_rdy','read_address',
 	   'read_en',
-	   'read_data',]
+	   'read_data','write_address',]
     def __init__(self,dut,name,clk,sb_callback):
         BusDriver.__init__(self,dut,name,clk)
         self.bus.read_en.value = 0
         self.clk = clk
-        self.callback=sb_callback
+        self.callback = sb_callback
         self._driver_send(0)
     async def _driver_send(self,value,sync=True):
         while True:
+            for i in range(random.randint(0, 20)):
+                await RisingEdge(self.clk)
             if self.bus.read_rdy.value!=1:
                 await RisingEdge(self.bus.read_rdy)
             self.bus.read_en.value=1
-                #self.bus.data.value= valueawait
+            #self.bus.data.value= valueawait
             await ReadOnly()
             self.callback(self.bus.read_data.value)
             await RisingEdge(self.clk)
-            self.bus.read_en.value=0
             await NextTimeStep()
+            self.bus.read_en.value=0        
+
 
 class val:
     def __init__(self,write_address,write_data,read_address):
