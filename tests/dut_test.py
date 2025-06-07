@@ -11,7 +11,7 @@ import os
 def cb_fn(av):
     global exp_val 
     assert exp_val,"******no exp_val*******"
-    #print("act= ",av, "  exp= ",exp_val.pop(0))
+    #print("act= ",av, "  exp= ",exp_val)
     assert av==exp_val.pop(0), "EEEE"
 
 
@@ -126,6 +126,8 @@ class ReadDriver(BusDriver):
         self.clk = clk
 
     async def _driver_send(self,value,sync=True):
+        #for i in range random.randint(0,20):
+         #   await RisingEdge(self.clk)
         if self.bus.read_rdy.value!=1:
             await RisingEdge(self.bus.read_rdy)
         self.bus.read_en.value=1
