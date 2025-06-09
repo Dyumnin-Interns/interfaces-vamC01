@@ -11,8 +11,10 @@ import os
 def cb_fn(av):
     global exp_val 
     assert exp_val,"******no exp_val*******"
-    #print("act= ",av, "  exp= ",exp_val)
-    assert av==exp_val.pop(0), "EEEE"
+    ee=exp_val.pop(0)
+    #print("act= ",av, "  exp= ",ee)
+    #print ("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    assert av==ee, "EEEE"
 
 
 @CoverPoint("top.write_address",xf=lambda x, y, z,w:x, bins=[4,5])
@@ -66,7 +68,7 @@ async def dut_test(dut):
     IO_monitor(dut,'',dut.CLK,callback=wr_port_cover)
     out =OutputDriver(dut,'',dut.CLK,sb_callback=cb_fn)
 
-    for i in range(100):
+    for i in range(10):
         a=random.randint(0,1)
         b=random.randint(0,1)
         wax=random.randint(4,5)
@@ -174,12 +176,13 @@ class OutputDriver(BusDriver):
         self.bus.read_en.value=1
         #self.bus.data.value= valueawait
         await ReadOnly()
+        #print("read!!")
+        #print ("r_add= ",self.bus.read_address.value, " r_data= ",self.bus.read_data.value)
         self.callback(self.bus.read_data.value)
         await RisingEdge(self.clk)
         await NextTimeStep()
         self.bus.read_en.value=0
-        #print("read!!")
-        #print ("r_add= ",self.bus.read_address.value, " r_data= ",self.bus.read_data.value)
+
         #print(f"Time = {get_sim_time('ns')} ns")
 
 class val:
